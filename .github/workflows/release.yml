@@ -39,14 +39,12 @@ jobs:
           name: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
           path: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
 
-
   release:
     runs-on: ubuntu-latest
     needs: build
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
-
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -58,12 +56,25 @@ jobs:
           draft: false
           prerelease: false
 
+  upload:
+    runs-on: ubuntu-latest
+    needs: release
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
+
       - name: Upload binaries to release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.release.outputs.upload_url }}
           asset_path: ./secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
           asset_name: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
           asset_content_type: application/octet-stream
