@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -90,10 +91,26 @@ func replaceWithRegex(ctx context.Context, line string, provider providers.Secre
 	for _, match := range matches {
 		secretPath := strings.TrimSpace(match[1])
 		targetKey := ""
+
+		// clear secretPath from targetKey
 		if strings.Contains(secretPath, "//") {
-			parts := strings.Split(secretPath, "//")
-			secretPath = parts[0]
-			targetKey = parts[1]
+			lastIndex := strings.LastIndex(secretPath, "//")
+			parts := strings.SplitN(secretPath, "//", lastIndex+1)
+			secretPath = strings.Join(parts[:len(parts)-1], "//")
+			targetKey = parts[len(parts)-1]
+		}
+
+		// match all the characters for the targetKey, including those not matched by provider.GetRegex
+		if targetKey != "" {
+			targetKeyRegex := regexp.MustCompile(fmt.Sprintf(`%s//([^\s]+)\b`, regexp.QuoteMeta(secretPath)))
+			targetKeyMatch := targetKeyRegex.FindStringSubmatch(line)
+
+			if len(targetKeyMatch) > 1 {
+				println("regexp match!")
+				targetKey = targetKeyMatch[1]
+				parts := strings.Split(secretPath, "//")
+				secretPath = parts[0]
+			}
 		}
 
 		var secretValue string
@@ -129,7 +146,7 @@ func replaceWithRegex(ctx context.Context, line string, provider providers.Secre
 				if value, ok := jsonData[targetKey]; ok {
 					secretValue = fmt.Sprintf("%v", value)
 				} else {
-					handleError(fmt.Errorf("Key %s not found in JSON for secret %s", targetKey, match[0]))
+					handleError(fmt.Errorf("Key '%s' not found in JSON for secret %s", targetKey, match[0]))
 					continue
 				}
 			} else {
@@ -141,7 +158,7 @@ func replaceWithRegex(ctx context.Context, line string, provider providers.Secre
 					if value, ok := yamlData[targetKey]; ok {
 						secretValue = fmt.Sprintf("%v", value)
 					} else {
-						handleError(fmt.Errorf("Key %s not found in YAML for secret %s", targetKey, match[0]))
+						handleError(fmt.Errorf("Key '%s' not found in YAML for secret %s", targetKey, match[0]))
 						continue
 					}
 				} else {
