@@ -30,14 +30,16 @@ jobs:
       - name: Run unit tests
         run: make test
 
-      - name: Build
-        run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -v -o secfetch-${{ matrix.goos }}-${{ matrix.goarch }} .
+      - name: Build and compress binaries into zip
+        run: |
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -v -o secfetch .
+          zip secfetch-${{ matrix.goos }}-${{ matrix.goarch }}.zip secfetch
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+          path: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}.zip
 
   release:
     runs-on: ubuntu-latest
@@ -67,7 +69,7 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v3
         with:
-          name: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}.zip
 
       - name: Upload binaries to release
         uses: actions/upload-release-asset@v1
@@ -75,6 +77,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ./secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
-          asset_name: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}
-          asset_content_type: application/octet-stream
+          asset_path: ./secfetch-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+          asset_name: secfetch-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+          asset_content_type: application/zip
