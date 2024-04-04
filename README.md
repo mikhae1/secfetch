@@ -1,4 +1,4 @@
-# secfetch: Fetch and Replace Secrets in Your Input
+# secfetch: fetch and replace secrets in your input
 
 **secfetch** reads input from stdin, scans for occurrences of specified prefixes followed by secret identifiers in the following placeholder syntax:
 `{prefix}//{secret-path}//{target-key}`, retrieves the corresponding secret values from the appropriate service, and replaces the placeholders in the input with the actual secret values.
@@ -12,11 +12,11 @@
 
 ## Usage Example
 
-    echo 'I am a base64://c2VjcmV0!' | ./secfetch
+    echo 'I am a "base64://c2VjcmV0"!' | ./secfetch
 
 The script will replace secret placeholders with their actual values in the output:
 
-    I am a secret!
+    I am a "secret"!
 
 ### Target Keys
 
@@ -31,13 +31,12 @@ Suppose you have a secret stored in AWS Secrets Manager named `my-api-keys` with
 }
 ```
 
-Or create it as yaml:
+Or in yaml format:
 
 ```yaml
   stripe_key: "sk_test_...",
   twilio_key: "AC..."
 ```
-
 
 To extract the `stripe_key` value, you would use the following placeholder in your input:
 
@@ -45,14 +44,13 @@ To extract the `stripe_key` value, you would use the following placeholder in yo
 
 ## Features
 
-- Custom prefixes
-- Caching
-- Retries
-- Json and yaml fields access
+- **Custom prefixes**: you can use your own prefixes, reusing existing configuration
+- **Caching**: speed up and reduce the number of API calls
+- **Retries**: minimize automation errors
 
 ## Install:
 
-- Download the secfetch script from [latest Releases](https://github.com/mikhae1/secfetch/releases)
+- Download the `secfetch` binary from [latest Releases](https://github.com/mikhae1/secfetch/releases)
 - Unzip and make it executable: `chmod +x secfetch`
 
 ## Supported environment variables:
