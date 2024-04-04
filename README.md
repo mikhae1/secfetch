@@ -1,4 +1,4 @@
-# secfetch: fetch and replace secrets in your input
+# Secfetch
 
 **secfetch** reads input from stdin, scans for occurrences of specified prefixes followed by secret identifiers in the following placeholder syntax:
 `{prefix}//{secret-path}//{target-key}`, retrieves the corresponding secret values from the appropriate service, and replaces the placeholders in the input with the actual secret values.
