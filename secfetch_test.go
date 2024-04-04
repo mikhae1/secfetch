@@ -33,6 +33,32 @@ func TestReplaceWithRegex_Base64Provider(t *testing.T) {
 			input:    "No replacement should occur",
 			expected: "No replacement should occur",
 		},
+		{
+			name:     "Simple YAML target key",
+			input:    `The database name is base64://ZGF0YWJhc2U6IG15X2RiCg==//database`, // database: my_db encoded
+			expected: "The database name is my_db",
+		},
+		{
+			name:     "Simple JSON target key",
+			input:    `The API key is base64://eyJhY2Nlc3NfdG9rZW4iOiAiMTIzNDUifQ==//access_token`, // {"access_token": "12345"} encoded
+			expected: "The API key is 12345",
+		},
+		{
+			name:     "Cached JSON target key",
+			input:    `The base64://eyJmb28iOiAiZmlyZSIsICJiYXIiOiAiaWNlIn0=//foo and base64://eyJmb28iOiAiZmlyZSIsICJiYXIiOiAiaWNlIn0=//bar!`, // {"foo": "fire", "bar": "ice"} encoded
+			expected: "The fire and ice!",
+		},
+	  {
+			name: "Simple multiline replacement",
+			input: `This is a multiline string.
+The secret value is:
+base64://aGVsbG8gd29ybGQK
+`,
+			expected: `This is a multiline string.
+The secret value is:
+hello world
+`,
+		},
 	}
 
 	for _, tc := range tests {

@@ -1,6 +1,7 @@
 # secfetch: Fetch and Replace Secrets in Your Input
 
-**secfetch** is a Go script that reads input from stdin, scans for occurrences of specified prefixes followed by secret identifiers, retrieves the corresponding secret values from the appropriate service, and replaces the placeholders in the input with the actual secret values.
+**secfetch** reads input from stdin, scans for occurrences of specified prefixes followed by secret identifiers in the following placeholder syntax:
+`{prefix}//{secret-path}//{target-key}`, retrieves the corresponding secret values from the appropriate service, and replaces the placeholders in the input with the actual secret values.
 
 ## Supported Services
 
@@ -9,36 +10,57 @@
 - **Environment Variables:** `env://VARIABLE_NAME`
 - **Base64 encoded strings:** `base64://encoded-string` (not recommended for sensitive data)
 
-## Install:
-
-Download the secfetch script.
-Make it executable: `chmod +x secfetch`
-
-## Set environment variables (optional):
-
-```hcl
-SEC_SSM_PREFIX: Custom prefix for SSM secrets (default: ssm://)
-SEC_SECRETS_PREFIX: Custom prefix for Secrets Manager secrets (default: secrets://)
-SEC_ENV_PREFIX: Custom prefix for environment variables (default: env://)
-SEC_BASE64_PREFIX: Custom prefix for Base64 encoded strings (default: base64://)
-SEC_IGNORE_ERR: Set to any value to ignore errors and continue processing (default: exit on error)
-SEC_RETRIES: Number of retries for fetching secrets (default: 3)
-SEC_TIMEOUT: Timeout in seconds for fetching secrets (default: 30)
-```
-
 ## Usage Example
 
-Pipe your input to secfetch:
+    echo 'I am a base64://c2VjcmV0!' | ./secfetch
 
-    cat input.txt | ./secfetch
+The script will replace secret placeholders with their actual values in the output:
 
-The script will replace secret placeholders with their actual values in the output.
+    I am a secret!
 
-## Notes
+### Target Keys
 
-- The script uses regular expressions to match secret placeholders.
-- Ensure your custom prefixes don't conflict with other patterns in your input.
-- For AWS services, ensure you have the necessary credentials and permissions to access the secrets.
-- Base64 encoding is not a secure way to store secrets. Use it only for non-sensitive data.
-- The script caches fetched secret values to improve performance.
-- Error messages are printed to stderr.
+You can specify a target key within a secret to extract a specific value from structured secrets (e.g., JSON or YAML). This is useful when your secret contains multiple key-value pairs, and you only need a particular value.
+
+Suppose you have a secret stored in AWS Secrets Manager named `my-api-keys` with the following JSON content:
+
+```json
+{
+  "stripe_key": "sk_test_...",
+  "twilio_key": "AC..."
+}
+```
+
+Or create it as yaml:
+
+```yaml
+  stripe_key: "sk_test_...",
+  twilio_key: "AC..."
+```
+
+
+To extract the `stripe_key` value, you would use the following placeholder in your input:
+
+    stripe_key: "secrets://my-api-keys//stripe_key"
+
+## Features
+
+- Custom prefixes
+- Caching
+- Retries
+- Json and yaml fields access
+
+## Install:
+
+- Download the secfetch script from [latest Releases](https://github.com/mikhae1/secfetch/releases)
+- Unzip and make it executable: `chmod +x secfetch`
+
+## Supported environment variables:
+
+- `SEC_SSM_PREFIX`: Custom prefix for SSM secrets (default: ssm://)
+- `SEC_SECRETS_PREFIX`: Custom prefix for Secrets Manager secrets (default: secrets://)
+- `SEC_ENV_PREFIX`: Custom prefix for environment variables (default: env://)
+- `SEC_BASE64_PREFIX`: Custom prefix for Base64 encoded strings (default: base64://)
+- `SEC_IGNORE_ERR`: Set to any value to ignore errors and continue processing (default: exit on error)
+- `SEC_RETRIES`: Number of retries for fetching secrets (default: 3)
+- `SEC_TIMEOUT`: Timeout in seconds for fetching secrets (default: 30)
