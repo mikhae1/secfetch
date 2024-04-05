@@ -8,7 +8,7 @@ BUILD_FLAGS=-ldflags="-s -w"
 TEST_FLAGS=-v
 
 # Default target: build the binary
-all: test build
+all: test vet build
 
 # Build the binary
 build:
@@ -18,6 +18,9 @@ build:
 test:
 	cd ./providers && go test $(TEST_FLAGS) ./...
 	go test $(TEST_FLAGS) ./...
+
+vet:
+	go vet ./...
 
 # Clean up build artifacts
 clean:

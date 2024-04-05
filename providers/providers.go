@@ -30,7 +30,7 @@ func NewSSMProvider(client *ssm.SSM, prefix string) *SSMProvider {
 	return &SSMProvider{
 		client: client,
 		prefix: prefix,
-		regex:  regexp.MustCompile(prefix + `([a-zA-Z0-9_.-/]+)`),
+		regex:  regexp.MustCompile(regexp.QuoteMeta(prefix) + `([a-zA-Z0-9_.-/]+)`),
 	}
 }
 
@@ -72,7 +72,7 @@ func NewSecretsManagerProvider(client *secretsmanager.SecretsManager, prefix str
 	return &SecretsManagerProvider{
 		client: client,
 		prefix: prefix,
-		regex:  regexp.MustCompile(prefix + `([a-zA-Z0-9-/_+=.@:]+)`),
+		regex:  regexp.MustCompile(regexp.QuoteMeta(prefix) + `([a-zA-Z0-9-/_+=.@:]+)`),
 	}
 }
 
@@ -110,7 +110,7 @@ type EnvProvider struct {
 func NewEnvProvider(prefix string) *EnvProvider {
 	return &EnvProvider{
 		prefix: prefix,
-		regex:  regexp.MustCompile(prefix + `([a-zA-Z0-9_]+)`), // Match alphanumeric and underscores
+		regex:  regexp.MustCompile(regexp.QuoteMeta(prefix) + `([a-zA-Z0-9_]+)`), // Match alphanumeric and underscores
 	}
 }
 
@@ -142,7 +142,7 @@ type Base64Provider struct {
 func NewBase64Provider(prefix string) *Base64Provider {
 	return &Base64Provider{
 		prefix: prefix,
-		regex:  regexp.MustCompile(prefix + `([a-zA-Z0-9+/=]+)`), // Match Base64 characters
+		regex:  regexp.MustCompile(regexp.QuoteMeta(prefix) + `([a-zA-Z0-9+/=]+)`), // Match Base64 characters
 	}
 }
 

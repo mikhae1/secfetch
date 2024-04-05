@@ -106,7 +106,6 @@ func replaceWithRegex(ctx context.Context, line string, provider providers.Secre
 			targetKeyMatch := targetKeyRegex.FindStringSubmatch(line)
 
 			if len(targetKeyMatch) > 1 {
-				println("regexp match!")
 				targetKey = targetKeyMatch[1]
 				parts := strings.Split(secretPath, "//")
 				secretPath = parts[0]
