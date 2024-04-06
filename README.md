@@ -34,13 +34,23 @@ Suppose you have a secret stored in AWS Secrets Manager named `my-api-keys` with
 Or in yaml format:
 
 ```yaml
-  stripe_key: "sk_test_...",
-  twilio_key: "AC..."
+stripe_key: "sk_test_...",
+twilio_key: "AC..."
 ```
 
 To extract the `stripe_key` value, you would use the following placeholder in your input:
 
     stripe_key: "secrets://my-api-keys//stripe_key"
+
+#### Base64 Encoding
+
+You can now optionally encode secret values to Base64 by including `//base64` in the secret path. This can be useful for handling binary data or ensuring compatibility with systems that expect Base64-encoded secrets, like Helm charts.
+
+##### Example:
+
+    echo 'My secret key is "secrets://my-api-keys//stripe_key//base64"' | ./secfetch
+
+This will fetch the stripe_key from the `my-api-keys` secret in AWS Secrets Manager, encode it to Base64, and then replace the placeholder with the encoded value.
 
 ## Features
 

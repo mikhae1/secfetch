@@ -2,10 +2,10 @@
 
 // The script reads input from stdin, scans for occurrences of the specified prefixes followed by the secret identifier,
 // retrieves the corresponding secret value from the appropriate service, and replaces the placeholders in the input with the actual secret values.
-// It supports:
+// Supports:
 // - "ssm://" AWS Parameters Store
 // - "secrets://" AWS Secrets Manager
-// - "env://" Environment Variables
+// - "env://" Environment variables
 // - "base64://" Base64 encoded strings (not safe)
 
 package main
@@ -15,6 +15,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -38,7 +39,9 @@ var (
 	ignoreErrors = os.Getenv("SEC_IGNORE_ERR") != ""
 	retries, _   = strconv.Atoi(getEnv("SEC_RETRIES", "3"))
 	timeout, _   = strconv.Atoi(getEnv("SEC_TIMEOUT", "30"))
-	cache        sync.Map
+	base64suffix = "base64"
+
+	cache sync.Map
 )
 
 func main() {
@@ -91,18 +94,20 @@ func replaceWithRegex(ctx context.Context, line string, provider providers.Secre
 	for _, match := range matches {
 		secretPath := strings.TrimSpace(match[1])
 		targetKey := ""
+		base64Encoding := false
 
 		// clear secretPath from targetKey
 		if strings.Contains(secretPath, "//") {
-			lastIndex := strings.LastIndex(secretPath, "//")
-			parts := strings.SplitN(secretPath, "//", lastIndex+1)
-			secretPath = strings.Join(parts[:len(parts)-1], "//")
-			targetKey = parts[len(parts)-1]
+			parts := strings.Split(secretPath, "//")
+			secretPath = parts[0]
+			if len(parts) > 1 {
+				targetKey = strings.Join(parts[1:], "//") // Join remaining parts as targetKey
+			}
 		}
 
 		// match all the characters for the targetKey, including those not matched by provider.GetRegex
 		if targetKey != "" {
-			targetKeyRegex := regexp.MustCompile(fmt.Sprintf(`%s//([^\s]+)\b`, regexp.QuoteMeta(secretPath)))
+			targetKeyRegex := regexp.MustCompile(fmt.Sprintf(`%s//(\S+)\b`, regexp.QuoteMeta(secretPath)))
 			targetKeyMatch := targetKeyRegex.FindStringSubmatch(line)
 
 			if len(targetKeyMatch) > 1 {
@@ -110,6 +115,14 @@ func replaceWithRegex(ctx context.Context, line string, provider providers.Secre
 				parts := strings.Split(secretPath, "//")
 				secretPath = parts[0]
 			}
+		}
+
+		// Check for //base64 and remove it from the targetKey
+		if strings.Contains(targetKey, base64suffix) {
+			base64Encoding = true
+			targetKey = strings.ReplaceAll(targetKey, "//"+base64suffix, "")
+			targetKey = strings.ReplaceAll(targetKey, base64suffix+"//", "")
+			targetKey = strings.ReplaceAll(targetKey, base64suffix, "")
 		}
 
 		var secretValue string
@@ -165,6 +178,12 @@ func replaceWithRegex(ctx context.Context, line string, provider providers.Secre
 					continue
 				}
 			}
+		}
+
+		// Apply base64 encoding if needed
+		if base64Encoding {
+			fmt.Fprintf(os.Stderr, "< enc [%s] %s (checksum: %s) \n", base64suffix, secretPath, checksum(secretValue))
+			secretValue = base64.StdEncoding.EncodeToString([]byte(secretValue))
 		}
 
 		// Replace the template with the secret value

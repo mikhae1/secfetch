@@ -59,6 +59,16 @@ The secret value is:
 hello world
 `,
 		},
+		{
+			name:     "Base64 encoder",
+			input:    "The secret is base64://dXNlcjogYWRtMW4=//base64",
+			expected: "The secret is dXNlcjogYWRtMW4=",
+		},
+		{
+			name:     "YAML target key and base64 encoder",
+			input:    "The secret is base64://dXNlcjogYWRtMW4=//user//base64",
+			expected: "The secret is YWRtMW4=",
+		},
 	}
 
 	for _, tc := range tests {
